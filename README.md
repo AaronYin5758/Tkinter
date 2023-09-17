@@ -1,2 +1,3 @@
 # Tkinter
-attempt to learn Python's Tinter
+attempt to learn Python's TKinter
+
