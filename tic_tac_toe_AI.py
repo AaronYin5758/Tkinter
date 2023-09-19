@@ -19,6 +19,7 @@ def isWinner(board, symbol):
 
 def parse_board(board):
     # transform the 2d list of buttons to a 1d list of chars
+    # the indexes are [0, 8] for consistency
     b, empty = [], []
     for row in range(3):
         for col in range(3):
@@ -29,18 +30,18 @@ def parse_board(board):
 
 def index_to_2d(i):
     # convert 1d index from 0-8 to 2d index (row, col), row, col in [0, 3]
-    return (i//3, 1%3)
+    return (i//3, i%3)
 
 def random_ai(board, symbol, player):
     #chooses an available tile randomly
-    return random.choice(parse_board(board)[1])
+    return index_to_2d(random.choice(parse_board(board)[1]))
 
 def inter_ai(board, symbol, player):
     # ai looks at state of board, then decides its move greedily based on the following
     # priorities:
     #           1.winning 
     #           2.prevent player from winning 
-    #           3.choose the center, a corner, or a mid tile (the tile with most "empty" directions)
+    #           3.choose the center, a corner, or a middles tile (the tile with most "empty" directions)
     ###############################################################
     b, empty = parse_board(board)
 
@@ -52,14 +53,27 @@ def inter_ai(board, symbol, player):
     elif len(empty) == 1:   # only one tile free
         return index_to_2d(empty[0])
 
-    for ind in empty:
+    # loop through every empty tile and find the winning play of both players
+    self_win, player_win = None, None
+    for ind in empty:    
         temp_b = b[:]
         temp_b[ind] = symbol
         if isWinner(temp_b, symbol):
-            return index_to_2d(ind)
+            self_win = ind
         temp_b[ind] = player
         if isWinner(temp_b, player):
-            return index_to_2d(ind)
+            player_win = ind
     
+    # prioritize self win over player win
+    if self_win: return index_to_2d(self_win)   
+    if player_win: return index_to_2d(player_win)
 
-        
+    # prioritize center, then corners, then middles
+    empty_corners, empty_mids = [x for x in [0,2,6,8] if x in empty], [x for x in [1,3,5,7] if x in empty]
+    if b[4] == " ": return index_to_2d(4)
+    elif empty_corners: return index_to_2d(random.choice(empty_corners))
+    else:   return index_to_2d(random.choice(empty_mids))
+
+
+def hard(board, symbol, player):
+    pass
