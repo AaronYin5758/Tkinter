@@ -6,9 +6,8 @@ def main():
 
     test_random()
 
-def print_board():
+def print_board(board):
     # for debugging purposes
-    global board
     for row in range(3):
         for col in range(3):
             if col == 2:
@@ -25,6 +24,8 @@ def buttonify(b):
     return board
     
 def test_random():
+    # to test if the randomly generated position is valid
+    # i.e. the returned index is an empty tile
     board = [0]*9
     for _ in range(100):
         for i in range(9):
@@ -36,12 +37,13 @@ def test_random():
             if board[row*3 + col] != " ":
                 print("error")
                 print("row:", row, ", col:", col)
-                print_board()
+                print_board(board)
                 return False
     print("random_ai passed")
 
 def test_inter():
-    global board
+    board = [0] * 9
+    
 
 
 if __name__ == '__main__':
