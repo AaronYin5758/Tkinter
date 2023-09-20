@@ -8,7 +8,7 @@ menu_font = ("Arial", 12)
 symbols = ['x', 'o']  # two symbols in a list, easy to change and easy to ramdonly pick
 player = random.choice(symbols)
   
-# flag for game mode, 0 = local 2 player, 1 = vs random ai, 2 = vs intermediate ai, 3 = vs hard ai
+# flag for game mode, 0 = local, 1 = vs random ai, 2 = vs intermediate ai, 3 = vs hard ai
 mode = 0 
 
 def new_game():
