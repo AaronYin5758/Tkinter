@@ -34,7 +34,8 @@ def index_to_2d(i):
 
 def random_ai(board, symbol, player):
     #chooses an available tile randomly
-    return index_to_2d(random.choice(parse_board(board)[1]))
+    _, empty = parse_board(board)
+    return index_to_2d(random.choice(empty)) if empty else -1
 
 def inter_ai(board, symbol, player):
     # ai looks at state of board, then decides its move greedily based on the following
@@ -45,13 +46,16 @@ def inter_ai(board, symbol, player):
     ###############################################################
     b, empty = parse_board(board)
 
-    if len(empty) == 9:   # all tiles free
+    if not empty: # full board, something wrong
+        return -1
+    elif len(empty) == 9:   # all tiles free
         return index_to_2d(4)
     elif len(empty) == 8:  # all but one tile free
         if b[4] == " ": return index_to_2d(4)
         else: return index_to_2d(random.choice([0,2,6,8]))
     elif len(empty) == 1:   # only one tile free
         return index_to_2d(empty[0])
+
 
     # loop through every empty tile and find the winning play of both players
     self_win, player_win = None, None
@@ -75,5 +79,5 @@ def inter_ai(board, symbol, player):
     else:   return index_to_2d(random.choice(empty_mids))
 
 
-def hard(board, symbol, player):
+def hard_ai(board, symbol, player):
     pass
