@@ -9,12 +9,11 @@ def main():
 
 def print_board(board):
     # for debugging purposes
-    for row in range(3):
-        for col in range(3):
-            if col == 2:
-                print(board[row][col]['text'])
-            else:
-                print(board[row][col]['text'], end = ",")
+    for i, tile in enumerate(board):
+        if i in [2,5,8]:
+            print(tile, end = '\n')
+        else:
+            print(tile, end = "|")
     
 def buttonify(b:list[int]):
     # transforms a 1d list of chars into a 2d list of buttons to be used in ai file
@@ -32,12 +31,12 @@ def test_random():
     board = [0]*9
     for _ in range(10):
         for i in range(9):
-            board[i] = "1" if random.randint(0,1) else " "
+            board[i] = "1" if random.choice([" ", "1", "-1"]) else " "
         board[2] = " "
         for _ in range(10):
-            row, col = random_ai(buttonify(board), "", "")
+            row, col = random_ai(buttonify(board), "1", "-1")
             #print(row, col)
-            if board[row*3 + col] != " ":
+            if board[row*3 + col] != " " or row == col == -1:
                 print("error")
                 print("row:", row, ", col:", col)
                 print_board(board)
