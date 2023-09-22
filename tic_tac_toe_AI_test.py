@@ -1,11 +1,24 @@
 import tkinter as tk
 import random
 import unittest
-from tic_tac_toe_AI import random_ai, inter_ai
+from tic_tac_toe_AI import *
 
 def main():
 
     test_random()
+
+    loader = unittest.TestLoader()
+    runner = unittest.TextTestRunner()
+
+    print("Running tests on intermediate ai:")
+    inter_suite = unittest.TestSuite()
+    inter_suite.addTests(loader.loadTestsFromTestCase(inter_test))
+    runner.run(inter_suite)
+
+    print("Running tests on hard ai:")
+    hard_suite = unittest.TestSuite()
+    hard_suite.addTests(loader.loadTestsFromTestCase(hard_test))
+    runner.run(hard_suite)
 
 def print_board(board):
     # for debugging purposes
@@ -15,7 +28,7 @@ def print_board(board):
         else:
             print(tile, end = "|")
     
-def buttonify(b:list[int]):
+def buttonify(b:list[str]):
     # transforms a 1d list of chars into a 2d list of buttons to be used in ai file
     # this is for easier set up of test cases
     # also converts empty string("") into white space
@@ -41,7 +54,7 @@ def test_random():
                 print("row:", row, ", col:", col)
                 print_board(board)
                 return False
-    print("random_ai passed")
+    print("random_ai passed", end="\n\n")
 
 class inter_test(unittest.TestCase):
     # winning cases: both player wins, or either player wins on next move
@@ -75,7 +88,7 @@ class inter_test(unittest.TestCase):
     # closing move
     def test_move_on_full_board(self):
         board = buttonify(["1","2","1", "1","2","1", "2","1","2"])
-        self.assertEqual(inter_ai(board, "1", "2"), -1)
+        self.assertEqual(inter_ai(board, "1", "2"), (-1,-1))
     
     def test_one_tile_left(self):
         board = buttonify(["1","2","1", "1","","1", "2","1","2"])
@@ -94,6 +107,30 @@ class inter_test(unittest.TestCase):
         board = buttonify(["2","1","2", "","","2", "1","2","1"])
         self.assertEqual(inter_ai(board, "1", "2"), (1, 1))
 
+
+class hard_test(unittest.TestCase):
+    # prio self win
+    def test_self_win(self):
+        board = buttonify(["1","1","", "2","","", "2","",""])
+        self.assertEqual(hard_ai(board, "1", "2"), (0, 2))
+    
+    def test_block_player_win(self):
+        board = buttonify(["1","1","", "2","","", "2","",""])
+        self.assertEqual(hard_ai(board, "2", "1"), (0, 2))
+
+    def test_self_win_over_player(self):
+        board = buttonify(["1","1","", "2","2","", "","",""]) 
+        self.assertEqual(inter_ai(board, "1", "2"), (0, 2)) 
+        self.assertEqual(inter_ai(board, "2", "1"), (1, 2))
+
+    def test_move_on_empty_board(self):
+        board = buttonify([""]*9)
+        self.assertNotEqual(hard_ai(board, "1", "2"), (-1, -1))
+
+    def test_move_on_full_board(self):
+        board = buttonify([str(x%3) for x in range(9)])
+        self.assertEqual(hard_ai(board, "1", "2"), (-1, -1))
+
 if __name__ == '__main__':
     main()
-    unittest.main()
+    #unittest.main()

@@ -7,27 +7,32 @@ import tkinter as tk
 import random
 from math import inf
 
-def check_winner(board:list[str]) -> (bool, str):
-    # checks the board and returns True and the winning side or False and None
-    if board[0] == board[1] == board[2]:  #check 3 rows
+def check_state(board:list[str]) -> (bool, str):
+    # checks the board state and returns:
+    #                               - (True, "1" or "-1" depending on the winner) if game is won
+    #                               - (False, None) if game is not over
+    #                               - (False, "DRAW") is game is over and it's a tie
+
+    if board[0] == board[1] == board[2] and board[0] != " ":  #check 3 rows
         return True, board[0]
-    elif board[3] == board[4] == board[5]:
+    elif board[3] == board[4] == board[5] and board[3] != " ":
         return True, board[3]
-    elif board[6] == board[7] == board[8]:
+    elif board[6] == board[7] == board[8] and board[6] != " ":
         return True, board[6]
-    elif board[0] == board[3] == board[6]:  #check 3 columns
+    elif board[0] == board[3] == board[6] and board[0] != " ":  #check 3 columns
         return True, board[0]
-    elif board[1] == board[4] == board[7]:
+    elif board[1] == board[4] == board[7] and board[1] != " ":
         return True, board[1]
-    elif board[2] == board[5] == board[8]:
+    elif board[2] == board[5] == board[8] and board[2] != " ":
         return True, board[2]
-    elif board[0] == board[4] == board[8]:  #check 2 diagonals
+    elif board[0] == board[4] == board[8] and board[0] != " ":  #check 2 diagonals
         return True, board[0]
-    elif board[2] == board[4] == board[6]:
+    elif board[2] == board[4] == board[6] and board[2] != " ":
         return True, board[2]
+   
     empty = board.count(" ")
     if empty > 0:
-        return False, None 
+        return False, None  
     else:
         return False, "DRAW"
 
@@ -50,7 +55,7 @@ def parse_board(board:list[list[tk.Button]], symbol:str, player:str)->(list[int]
 
 def index_to_2d(i):
     # convert 1d index from 0-8 to 2d index (row, col), row, col in [0, 3]
-    return (i//3, i%3)
+    return (i//3, i%3) if i >= 0 else (-1,-1)
 
 def random_ai(board, symbol, player)->(int, int):
     #chooses an available tile randomly
@@ -67,7 +72,7 @@ def inter_ai(board, symbol, player):
     b, empty = parse_board(board, symbol, player)
 
     if not empty: # full board, something wrong
-        return -1
+        return (-1, -1)
     elif len(empty) == 9:   # all tiles free
         return index_to_2d(4)
     elif len(empty) == 8:  # all but one tile free
@@ -80,16 +85,15 @@ def inter_ai(board, symbol, player):
     # loop through every empty tile and find the winning play of both players
     self_win, player_win = None, None
     for ind in empty:    
-        temp_b = b[:]
-        temp_b[ind] = "1"
-        game_won, winner = check_winner(temp_b)
+        b[ind] = "1"
+        game_won, winner = check_state(b)
         if game_won and winner == "1":
             self_win = ind
-        temp_b[ind] = "-1"
-        game_won, winner = check_winner(temp_b)
+        b[ind] = "-1"
+        game_won, winner = check_state(b)
         if game_won and winner == "-1":
             player_win = ind
-    
+        b[ind] = " "
     # prioritize self win over player win
     if self_win: return index_to_2d(self_win)   
     if player_win: return index_to_2d(player_win)
@@ -103,24 +107,29 @@ def inter_ai(board, symbol, player):
 
 def hard_ai(board, symbol, player):
     # use alpha beta pruning to determine which tile to pick
-    b, empty = parse_board(board)
-    res = alpha_beta(b, empty, inf, -inf, "1")
-    return res[0]
+    b, empty = parse_board(board, symbol, player)
+    #print("in hard,", b, "\n", empty)
+    res = alpha_beta(b, empty, -inf, inf, "1")
+    #print("back in hard, ", res)
+    return index_to_2d(res[0])
 
 def alpha_beta(board, empty, alpha, beta, cur_symbol):
     # returns position, score
     # "1" is ai/self, "-1" is player thus self winning scores positive, and tie score neutral
     # alpha/beta are the upper/lower limits
     # cur_symbol measures the current states, whether it's alpha or beta
-    game_won, winner = check_winner(board)
+    game_state, winner = check_state(board)
+    #print("alphabeta:", board)
     pos = -1
-    if len(empty) == 0 or winner:
+    if len(empty) == 0 or game_state:
+        #print("in winner", game_state, winner)
         score = 0
         if winner == "1": score = 1
         elif winner == "-1": score = -1
-        return [pos, score]
+        return pos, score
     
     for tile in empty:
+        #print("in loop, tile:", tile)
         board[tile] = cur_symbol
         temp_e = empty[:]
         temp_e.remove(tile)
@@ -128,10 +137,10 @@ def alpha_beta(board, empty, alpha, beta, cur_symbol):
         if cur_symbol == "1":
             # max node
             if score > alpha: # update alpha
-                alpha, pos = score, res
+                alpha, pos = score, tile
         else:
             if score < beta:
-                beta, pos = score, res
+                beta, pos = score, tile
 
         board[tile] = " "  # reset(backtrack)
 
@@ -139,6 +148,8 @@ def alpha_beta(board, empty, alpha, beta, cur_symbol):
             break
 
     if cur_symbol == "1":
+        #print("pos, alpha", pos, alpha)
         return pos, alpha
     else:
+        #print("pos, beta", pos, beta)
         return pos, beta
