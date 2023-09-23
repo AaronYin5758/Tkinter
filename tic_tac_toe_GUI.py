@@ -1,5 +1,8 @@
 import tkinter as tk
 import random
+from tic_tac_toe_AI import random_ai, inter_ai, hard_ai
+
+root = tk.Tk()
 
 btn_font = ("Arial", 20)
 lbl_font = ("Arial", 35)
@@ -7,21 +10,27 @@ menu_font = ("Arial", 12)
 
 symbols = ['x', 'o']  # two symbols in a list, easy to change and easy to ramdonly pick
 player = random.choice(symbols)
-  
+
 # flag for game mode, 0 = local, 1 = vs random ai, 2 = vs intermediate ai, 3 = vs hard ai
 mode = 0 
 
-def new_game():
+
+def new_game(pos=-1):
 ################################
 # clears the board, then randomize player
 ################################    
-    global board, player
+    global board, player, firts, second
     for row in range(3):
         for column in range(3):
             board[row][column]['text'] = " "
             board[row][column].configure(bg="#F0F0F0")
 
-    player = random.choice(symbols)
+    if pos == -1:
+        player = random.choice(symbols)
+    else:
+        first.set(pos == 0)
+        second.set(pos == 1)
+        player = symbols[pos]
     titles = {0:"", 1:"vs random bot\n", 2:"vs intermediate bot\n", 3:"vs hard bot\n"}
     text = titles[mode]
     turn_lbl.configure(text= text + player + "'s turn")
@@ -103,10 +112,11 @@ def take_turn(row, column):
         turn_lbl.configure(text="Tie!", font=lbl_font)
         
 
-def change_char():
+def new_char():
 ################################
 # pops up another window that asks to replace existing symbols with new ones
-# 
+# the input must be separated by a comma, if not the same prompt will pop up again
+# if any side of the comma is only whitespaces or "" the corresponding symbol will not change
 ################################
 
     top = tk.Toplevel()
@@ -119,13 +129,22 @@ def change_char():
 
     def cleanup():
         global symbols
-        symbols[0], symbols[1] = ent.get().strip("").split(",")
-        new_game()
-        top.destroy()
+        new_chars = ent.get().strip(" ")
+        try:
+            comma = new_chars.index(",")
+            symbols[0]  = new_chars[:comma] if new_chars else symbols[0]
+            symbols[1] = new_chars[comma+1:] if new_chars[comma+1:] else symbols[1]
+
+            new_game()
+            top.destroy()
+        except:
+            top.destroy()
+            new_char()
+        
 
     top.rowconfigure([0,1,2], weight=1)
     top.columnconfigure([0,1], weight=1)
-    txt = tk.Label(top, text="input characters\n separated by comma:", font=("", 24))
+    txt = tk.Label(top, text="input characters,\n separated by comma:", font=("", 24))
     txt.grid(row=0, columnspan=2)
     ent = tk.Entry(top, width=20, font=("", 24))
     ent.grid(row=1, columnspan=2)
@@ -135,7 +154,19 @@ def change_char():
     cancel_btn.grid(row=2,column=1, padx=1)
 
 
-def set_up_menu():
+def change_char(pos):
+##############################################
+# changes the player's current character
+# and starts a new game
+##############################################
+    global player
+    first.set(pos==0)
+    second.set(pos==1)
+    player = symbols[pos]
+    new_game(pos)
+
+
+def set_up_main_menu():
 ################################
 # set up the menubar,
 # contains: 
@@ -145,16 +176,27 @@ def set_up_menu():
 #              -switch difficulties of the AI
 #              - difficulties are: random, intermediate and hard
 ################################
+    global first, second
     menubar = tk.Menu(root)
 
     option_menu = tk.Menu(menubar, tearoff=0)
-    option_menu.add_command(label="Change Characters", command=change_char)
     option_menu.add_command(label="New Game", command=new_game)
+    option_menu.add_command(label="New Characters", command=new_char)
+
+    char_select_menu = tk.Menu(option_menu, tearoff=0)
+    first = tk.BooleanVar()
+    second = tk.BooleanVar()
+
+    char_select_menu.add_checkbutton(label=symbols[0], onvalue=1, offvalue=0, 
+                                     variable=first,command=lambda: change_char(0))
+    char_select_menu.add_checkbutton(label=symbols[1], onvalue=1, offvalue=0, 
+                                     variable=second,command=lambda: change_char(1))
+    
+    option_menu.add_cascade(label="Change character", menu=char_select_menu)
     option_menu.add_command(label="Quit", command=root.destroy)
 
     menubar.add_cascade(label="Options", menu=option_menu)
 
-    mode_menu = tk.Menu(menubar, tearoff=0)
     # private functions to change the mode variable to avoid using lambda
     def local_mode():
         global mode
@@ -172,6 +214,7 @@ def set_up_menu():
         global mode
         mode = 3
         new_game()
+    mode_menu = tk.Menu(menubar, tearoff=0)
     mode_menu.add_command(label="vs local player", command = local_mode)
     ai_menu = tk.Menu(menubar, tearoff = 0)
     ai_menu.add_command(label="vs random bot", command=random_mode)
@@ -229,12 +272,11 @@ def set_up_screen():
 
 def main():
     global root
-    root = tk.Tk()
-    
+
     set_up_screen()
 
-    set_up_menu()
-
+    set_up_main_menu()
+    new_game()
     root.mainloop()
 
 if __name__ == '__main__':
