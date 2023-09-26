@@ -10,30 +10,39 @@ menu_font = ("Arial", 12)
 
 symbols = ['x', 'o']  # two symbols in a list, easy to change and easy to ramdonly pick
 player = random.choice(symbols)
+player2 = symbols[1] if player == symbols[0] else symbols[0]
+
+player_first = True # flags if the player moves first or second, default first
 
 # flag for game mode, 0 = local, 1 = vs random ai, 2 = vs intermediate ai, 3 = vs hard ai
 mode = 0 
+# stores callbacks to the ai functions to avoid using if clauses
+AI = {1:random_ai, 2:inter_ai, 3:hard_ai}
 
+titles = {0:"", 1:"vs random bot\n", 2:"vs intermediate bot\n", 3:"vs hard bot\n"}
 
-def new_game(pos=-1):
+def new_game(change_char_to=-1, player_first=True):
 ################################
 # clears the board, then randomize player
 ################################    
-    global board, player, firts, second
+    global board, player, firts, second, titles, player2
     for row in range(3):
         for column in range(3):
             board[row][column]['text'] = " "
-            board[row][column].configure(bg="#F0F0F0")
+            board[row][column].configure(bg="#F0F0F0", relief = "raised")
 
-    if pos == -1:
+    if change_char_to == -1:
         player = random.choice(symbols)
+        player2 = symbols[1] if player == symbols[0] else symbols[0]
     else:
-        first.set(pos == 0)
-        second.set(pos == 1)
-        player = symbols[pos]
-    titles = {0:"", 1:"vs random bot\n", 2:"vs intermediate bot\n", 3:"vs hard bot\n"}
+        first.set(change_char_to == 0)
+        second.set(change_char_to == 1)
+        player = symbols[change_char_to]
+    
+    if not player_first: pass
+
     text = titles[mode]
-    turn_lbl.configure(text= text + player + "'s turn")
+    turn_lbl.configure(text= text + "{} turn".format("Your" if mode > 0 else player+"'s"))
 
 
 def check_winner():
@@ -76,7 +85,8 @@ def check_winner():
         for column in range(3):
             if board[row][column]['text'] != " ":
                 space += 1
-    if space == 9:
+    if len([board[row][col]['text'] for row in range(3) for col in range(3) 
+                       if board[row][col]['text'] ==" "]) == 0:
         return -1
     
     return False
@@ -87,6 +97,9 @@ def player_turn(row, column):
 ################################
 # each click on the board triggers this
 # current player takes the turn 
+# if it's vs ai, since it's triggered on button press
+# the ai will follow up on every valid button press
+# in the case that player goes second, new_game should initiate the first ai move
 ################################    
     global board
 
@@ -94,22 +107,37 @@ def player_turn(row, column):
         return  # do nothing, add warning/error message 
 
     if check_winner() is False:     #make sure players can't take turn after game is ended
-            take_turn(row, column)
+        take_turn(row, column, True)
+        if mode > 0 and check_winner() is False:    #also make sure ai does not take a turn after game is ended
+            ai_row, ai_col = AI[mode](board, player2, player)
+            take_turn(ai_row, ai_col, False)
 
 
-def take_turn(row, column):
-    global board, player, turn_lbl
+def take_turn(row, column, is_player):
+    global board, player, turn_lbl, titles
 
-    board[row][column]['text'] = player
+    board[row][column]['text'] = player if is_player else player2
     board[row][column].configure(relief="sunken")
+
+    text = titles[mode]
     turn_result = check_winner()
     if turn_result is True:     # game won
-        turn_lbl.configure(text="{} wins!".format(player), font=lbl_font)
+        if is_player and mode > 0:    # player won vs ai
+            turn_lbl.configure(text=text+"You WIN!")
+        elif is_player and mode == 0:    # local pvp
+            turn_lbl.configure(text="{} wins!".format(player))
+        elif not is_player:     # ai won
+            turn_lbl.configure(text=text+"You LOST!")
+
     elif turn_result is False:  # game continues, other player's turn
-        player = symbols[1] if player == symbols[0] else symbols[0]
-        turn_lbl.configure(text="{}'s turn".format(player), font=lbl_font)
+        if is_player and mode == 0:   # local pvp
+            player = symbols[1] if player == symbols[0] else symbols[0]
+            turn_lbl.configure(text="{}'s turn".format(player))
+        else:           # vs ai the text doesnt need to be changed
+            return
+
     elif turn_result == -1:     # tie
-        turn_lbl.configure(text="Tie!", font=lbl_font)
+        turn_lbl.configure(text=text+"Tie!")
         
 
 def new_char():
@@ -194,6 +222,8 @@ def set_up_main_menu():
     
     option_menu.add_cascade(label="Change character", menu=char_select_menu)
     option_menu.add_command(label="Quit", command=root.destroy)
+
+    # to do: add player_order sub-menu, change checkbuttons to radio buttons^
 
     menubar.add_cascade(label="Options", menu=option_menu)
 
